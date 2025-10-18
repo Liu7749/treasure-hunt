@@ -1,562 +1,375 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>寻宝冒险 - Treasure Hunt Adventure</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .game-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* 全景页面样式 */
-        .panorama-view {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-        }
-
-        .panorama-title {
-            color: white;
-            font-size: 3rem;
-            margin-bottom: 40px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            animation: fadeIn 1s ease-in;
-        }
-
-        .locations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            width: 100%;
-            max-width: 900px;
-        }
-
-        .location-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            padding: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .location-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            background: rgba(255, 255, 255, 1);
-        }
-
-        .location-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .location-card p {
-            color: #666;
-            line-height: 1.6;
-        }
-
-        .location-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
-        }
-
-        /* 冒险页面样式 */
-        .adventure-view {
-            display: none;
-            flex-direction: column;
-            min-height: 100vh;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 40px 20px;
-        }
-
-        .adventure-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .back-button {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s ease;
-        }
-
-        .back-button:hover {
-            background: #ff5252;
-        }
-
-        .adventure-title {
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .progress-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .progress-text {
-            font-size: 1.2rem;
-            line-height: 1.8;
-            text-align: center;
-            margin-bottom: 20px;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top: 5px solid #4ecdc4;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px 0;
-            display: none;
-        }
-
-        .action-button {
-            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 20px;
-        }
-
-        .action-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 25px rgba(78, 205, 196, 0.4);
-        }
-
-        .action-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .treasure-found {
-            text-align: center;
-            animation: treasurePulse 2s infinite;
-        }
-
-        .treasure-found h2 {
-            font-size: 3rem;
-            color: gold;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-        }
-
-        /* 动画 */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes treasurePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .panorama-title {
-                font-size: 2rem;
-            }
-            
-            .locations-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .adventure-title {
-                font-size: 2rem;
-            }
-            
-            .location-card {
-                padding: 20px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vue 寻宝冒险游戏 - 带背景音乐</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .screen { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .btn {
+      padding: 12px 24px; margin: 8px; border: none; border-radius: 50px; font-size: 16px; cursor: pointer;
+      transition: all 0.3s; font-weight: bold;
+    }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; transform: scale(1.05); }
+    .btn-secondary { background: #64748b; color: white; }
+    .card {
+      background: white; border-radius: 20px; padding: 30px; margin: 20px; width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .locations-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; width: 100%;
+    }
+    .location-item {
+      background: #f8fafc; padding: 20px; border-radius: 16px; cursor: pointer;
+      transition: all 0.3s; border: 2px solid transparent;
+    }
+    .location-item:hover { transform: translateY(-5px); border-color: #4f46e5; }
+    .progress-log {
+      background: #f1f5f9; padding: 20px; border-radius: 12px; min-height: 150px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; }
+    .treasure-found { color: gold; font-size: 1.2em; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <!-- 全景页面 -->
-        <div id="panoramaView" class="panorama-view">
-            <h1 class="panorama-title">🗺️ 寻宝冒险</h1>
-            <div class="locations-grid">
-                <div class="location-card" data-location="library">
-                    <h3>🏛️ 古老图书馆</h3>
-                    <p>神秘的古籍中隐藏着第一个线索，空气中弥漫着羊皮纸的香气...</p>
-                </div>
-                <div class="location-card" data-location="temple">
-                    <h3>⛩️ 神秘神庙</h3>
-                    <p>古老的石柱和神秘的符文，传说中的宝藏就藏在这里...</p>
-                </div>
-                <div class="location-card" data-location="forest">
-                    <h3>🌳 幽暗森林</h3>
-                    <p>茂密的树林中隐藏着秘密小径，只有勇敢的冒险者才能找到...</p>
-                </div>
-                <div class="location-card" data-location="cave">
-                    <h3>🕳️ 神秘洞穴</h3>
-                    <p>深邃的洞穴中回荡着未知的声音，宝藏可能就在深处...</p>
-                </div>
-            </div>
-        </div>
+  <!-- 音频元素（必须放在 #app 外部，确保能被 JS 获取） -->
+  <audio id="bg-audio" preload="auto" loop>
+    <source src="assets/audio/background.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="library-audio" preload="auto" loop>
+    <source src="assets/audio/library.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="temple-audio" preload="auto" loop>
+    <source src="assets/audio/temple.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="forest-audio" preload="auto" loop>
+    <source src="assets/audio/forest.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="cave-audio" preload="auto" loop>
+    <source src="assets/audio/cave.mp3" type="audio/mpeg">
+  </audio>
 
-        <!-- 冒险页面 -->
-        <div id="adventureView" class="adventure-view">
-            <div class="adventure-header">
-                <button class="back-button" id="backButton">⬅️ 返回全景</button>
-                <div id="currentLocation" class="adventure-title">正在加载...</div>
-            </div>
-            <div class="progress-container">
-                <div class="progress-text" id="progressText">点击开始冒险按钮开始寻宝...</div>
-                <div class="loading-spinner" id="loadingSpinner"></div>
-                <button class="action-button" id="startButton">🚀 开始寻宝冒险</button>
-            </div>
-        </div>
+  <div id="app">
+    <!-- 登录页 -->
+    <div v-if="!currentUser" class="screen">
+      <div class="card">
+        <h1 style="font-size: 2.5em; margin-bottom: 20px;">🗺️ 寻宝冒险</h1>
+        <p style="margin-bottom: 20px;">请输入你的冒险者名字</p>
+        <input
+          v-model="username"
+          @keyup.enter="login"
+          placeholder="例如：勇敢的刘留"
+          style="padding: 12px; width: 80%; max-width: 300px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;"
+        />
+        <button @click="login" class="btn btn-primary">开始冒险</button>
+      </div>
     </div>
 
-    <!-- 音频元素（使用本地路径） -->
-    <audio id="backgroundMusic" loop>
-        <source src="assets/audio/background.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="libraryMusic" loop>
-        <source src="assets/audio/library.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="templeMusic" loop>
-        <source src="assets/audio/temple.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="forestMusic" loop>
-        <source src="assets/audio/forest.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="caveMusic" loop>
-        <source src="assets/audio/cave.mp3" type="audio/mpeg">
-    </audio>
+    <!-- 主游戏界面 -->
+    <div v-else class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
+        <h1 style="color: white; font-size: 2em;">寻宝冒险</h1>
+        <div>
+          <button @click="showLeaderboard = !showLeaderboard" class="btn btn-primary">
+            {{ showLeaderboard ? '🎮 返回游戏' : '🏆 排行榜' }}
+          </button>
+          <button @click="logout" class="btn btn-secondary">退出 ({{ currentUser.username }})</button>
+        </div>
+      </div>
 
-    <script>
-        // 模拟宝藏地图API - 使用async/await重写
-        class TreasureMap {
-            static async getInitialClue(location) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                const clues = {
-                    library: "在古老的图书馆里找到了第一个线索：一本神秘的古籍中夹着一张泛黄的羊皮纸...",
-                    temple: "在神秘神庙的祭坛上发现了一个古老的卷轴，上面写着神秘的符文...",
-                    forest: "在幽暗森林的古老橡树下，发现了一个刻有神秘符号的石碑...",
-                    cave: "在神秘洞穴的深处，岩壁上闪烁着奇异的光芒，似乎隐藏着什么..."
-                };
-                return clues[location] || "在未知的地方找到了神秘线索...";
-            }
+      <!-- 排行榜 -->
+      <div v-if="showLeaderboard" class="card">
+        <h2>🏆 冒险者排行榜</h2>
+        <table v-if="rankedUsers.length > 0">
+          <thead>
+            <tr>
+              <th>排名</th>
+              <th>冒险者</th>
+              <th>宝藏数</th>
+              <th>游戏次数</th>
+              <th>最佳时间(s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(user, index) in rankedUsers" :key="user.username">
+              <td>#{{ index + 1 }}</td>
+              <td>{{ user.username }}</td>
+              <td>{{ user.treasures }}</td>
+              <td>{{ user.games }}</td>
+              <td>{{ user.bestTime ? user.bestTime.toFixed(1) : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else>暂无数据，快来成为第一个上榜者！</p>
+      </div>
 
-            static async decodeAncientScript(clue) {
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                if (!clue) {
-                    throw new Error("没有线索可以解码!");
-                }
-                return "解码成功!线索指向了一个隐藏的宝箱位置...";
-            }
+      <!-- 游戏主界面 -->
+      <div v-else>
+        <!-- 全景地图 -->
+        <div v-if="currentView === 'map'" class="card">
+          <h2>选择你的冒险地点</h2>
+          <div class="locations-grid">
+            <div v-for="(loc, key) in locations" :key="key" @click="selectLocation(key)" class="location-item">
+              <div style="font-size: 2em; margin-bottom: 10px;">{{ loc.icon }}</div>
+              <div>{{ loc.name }}</div>
+            </div>
+          </div>
+        </div>
 
-            static async searchLocation(location) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                const random = Math.random();
-                if (random < 0.3) {
-                    throw new Error("糟糕!遇到了守护者，需要重新尝试!");
-                }
-                const discoveries = {
-                    library: "在图书馆的密室中找到了一个古老的木箱...",
-                    temple: "在神庙的祭坛下方发现了一个石制宝箱...",
-                    forest: "在森林深处的树洞里找到了一个精致的铁盒...",
-                    cave: "在洞穴的暗室中发现了一个闪耀的水晶箱..."
-                };
-                return discoveries[location] || "找到了一个神秘的箱子...";
-            }
+        <!-- 冒险过程 -->
+        <div v-else-if="currentView === 'adventure'" class="card">
+          <button @click="goBackToMap" class="btn btn-secondary">⬅️ 返回地图</button>
+          <h2 style="margin: 20px 0;">{{ currentLocation?.name }}</h2>
+          <div class="progress-log">
+            <div v-for="(msg, i) in progress" :key="i" :class="{ 'treasure-found': msg.includes('恭喜') }">
+              {{ msg }}
+            </div>
+            <div v-if="progress.length === 0">点击“开始冒险”按钮启动寻宝！</div>
+          </div>
+          <button
+            @click="startAdventure"
+            :disabled="isPlaying"
+            :class="isPlaying ? 'btn-secondary' : 'btn-primary'"
+            class="btn"
+            style="margin-top: 20px;"
+          >
+            {{ isPlaying ? '🔍 冒险中...' : '🚀 开始寻宝' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
-            static async openTreasureBox() {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                return "🎉 恭喜!你找到了传说中的宝藏! 🎉";
-            }
-        }
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue;
 
-        // 游戏状态管理（使用 localStorage）
-        class GameState {
-            constructor() {
-                this.currentLocation = null;
-                this.gameProgress = [];
-                this.isGameActive = false;
-                this.loadState();
-            }
+    // ====== 模拟异步寻宝 API ======
+    const TreasureAPI = {
+      async getInitialClue(location) {
+        await new Promise(r => setTimeout(r, 1000));
+        const clues = {
+          library: "在古老的图书馆里找到了第一个线索：一本神秘的古籍中夹着一张泛黄的羊皮纸...",
+          temple: "在神秘神庙的祭坛上发现了一个古老的卷轴，上面写着神秘的符文...",
+          forest: "在幽暗森林的古老橡树下，发现了一个刻有神秘符号的石碑...",
+          cave: "在神秘洞穴的深处，岩壁上闪烁着奇异的光芒，似乎隐藏着什么..."
+        };
+        return clues[location];
+      },
+      async decodeScript(clue) {
+        await new Promise(r => setTimeout(r, 1500));
+        return "解码成功！线索指向了一个隐藏的宝箱位置...";
+      },
+      async searchLocation(location) {
+        await new Promise(r => setTimeout(r, 2000));
+        if (Math.random() < 0.3) throw new Error("糟糕！遇到了守护者！");
+        const finds = {
+          library: "在图书馆的密室中找到了一个古老的木箱...",
+          temple: "在神庙的祭坛下方发现了一个石制宝箱...",
+          forest: "在森林深处的树洞里找到了一个精致的铁盒...",
+          cave: "在洞穴的暗室中发现了一个闪耀的水晶箱..."
+        };
+        return finds[location];
+      },
+      async openTreasureBox() {
+        await new Promise(r => setTimeout(r, 1000));
+        return "🎉 恭喜！你找到了传说中的宝藏！";
+      }
+    };
 
-            saveState() {
-                try {
-                    const state = {
-                        currentLocation: this.currentLocation,
-                        gameProgress: this.gameProgress,
-                        isGameActive: this.isGameActive,
-                        timestamp: Date.now()
-                    };
-                    localStorage.setItem('treasureHuntState', JSON.stringify(state));
-                } catch (error) {
-                    console.warn('无法保存游戏状态:', error);
-                }
-            }
+    // ====== 主应用 ======
+    const App = {
+      setup() {
+        // 音频控制
+        const audioElements = {
+          background: document.getElementById('bg-audio'),
+          library: document.getElementById('library-audio'),
+          temple: document.getElementById('temple-audio'),
+          forest: document.getElementById('forest-audio'),
+          cave: document.getElementById('cave-audio')
+        };
 
-            loadState() {
-                try {
-                    const savedState = localStorage.getItem('treasureHuntState');
-                    if (savedState) {
-                        const state = JSON.parse(savedState);
-                        if (Date.now() - state.timestamp < 24 * 60 * 60 * 1000) {
-                            this.currentLocation = state.currentLocation;
-                            this.gameProgress = state.gameProgress;
-                            this.isGameActive = state.isGameActive;
-                        }
-                    }
-                } catch (error) {
-                    console.warn('无法加载游戏状态:', error);
-                }
-            }
-
-            updateProgress(message) {
-                this.gameProgress.push(message);
-                this.saveState();
-            }
-
-            resetGame() {
-                this.currentLocation = null;
-                this.gameProgress = [];
-                this.isGameActive = false;
-                this.saveState();
-            }
-        }
-
-        // UI控制器
-        class UIController {
-            constructor() {
-                this.panoramaView = document.getElementById('panoramaView');
-                this.adventureView = document.getElementById('adventureView');
-                this.progressText = document.getElementById('progressText');
-                this.loadingSpinner = document.getElementById('loadingSpinner');
-                this.startButton = document.getElementById('startButton');
-                this.backButton = document.getElementById('backButton');
-                this.currentLocationEl = document.getElementById('currentLocation');
-                this.backgroundMusic = document.getElementById('backgroundMusic');
-                this.locationMusics = {
-                    library: document.getElementById('libraryMusic'),
-                    temple: document.getElementById('templeMusic'),
-                    forest: document.getElementById('forestMusic'),
-                    cave: document.getElementById('caveMusic')
-                };
-                this.gameState = new GameState();
-                this.initEventListeners();
-                this.restoreState();
-                // 页面加载后播放全景背景音乐（用户交互前可能被阻止，但点击后会恢复）
-                this.backgroundMusic.play().catch(e => {});
-            }
-
-            initEventListeners() {
-                document.querySelectorAll('.location-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        const location = card.dataset.location;
-                        this.startAdventure(location);
-                    });
-                });
-
-                this.backButton.addEventListener('click', () => {
-                    this.showPanorama();
-                });
-
-                this.startButton.addEventListener('click', async () => {
-                    await this.runTreasureHunt();
-                });
-            }
-
-            showPanorama() {
-                this.adventureView.style.display = 'none';
-                this.panoramaView.style.display = 'flex';
-                this.stopAllMusic();
-                this.backgroundMusic.play().catch(e => {});
-            }
-
-            showAdventure(location) {
-                this.panoramaView.style.display = 'none';
-                this.adventureView.style.display = 'flex';
-                this.currentLocationEl.textContent = this.getLocationName(location);
-                this.gameState.currentLocation = location;
-                this.gameState.saveState();
-                this.playLocationMusic(location);
-            }
-
-            getLocationName(location) {
-                const names = {
-                    library: '🏛️ 古老图书馆',
-                    temple: '⛩️ 神秘神庙',
-                    forest: '🌳 幽暗森林',
-                    cave: '🕳️ 神秘洞穴'
-                };
-                return names[location] || location;
-            }
-
-            updateProgress(text) {
-                this.progressText.textContent = text;
-                this.progressText.classList.add('fade-in');
-                setTimeout(() => {
-                    this.progressText.classList.remove('fade-in');
-                }, 500);
-            }
-
-            showLoading(show = true) {
-                this.loadingSpinner.style.display = show ? 'block' : 'none';
-                this.startButton.disabled = show;
-            }
-
-            async runTreasureHunt() {
-                if (this.gameState.isGameActive) return;
-                
-                this.gameState.isGameActive = true;
-                this.gameState.saveState();
-                this.showLoading(true);
-                this.updateProgress("开始寻宝冒险...");
-
-                try {
-                    const clue = await TreasureMap.getInitialClue(this.gameState.currentLocation);
-                    this.updateProgress(clue);
-                    this.gameState.updateProgress(clue);
-
-                    const decoded = await TreasureMap.decodeAncientScript(clue);
-                    this.updateProgress(decoded);
-                    this.gameState.updateProgress(decoded);
-
-                    const found = await TreasureMap.searchLocation(this.gameState.currentLocation);
-                    this.updateProgress(found);
-                    this.gameState.updateProgress(found);
-
-                    const treasure = await TreasureMap.openTreasureBox();
-                    this.progressText.innerHTML = `<div class="treasure-found"><h2>${treasure}</h2></div>`;
-                    this.gameState.updateProgress(treasure);
-
-                } catch (error) {
-                    this.updateProgress(`❌ 任务失败: ${error.message}`);
-                    this.gameState.updateProgress(`任务失败: ${error.message}`);
-                } finally {
-                    this.showLoading(false);
-                    this.gameState.isGameActive = false;
-                    this.gameState.saveState();
-                }
-            }
-
-            playLocationMusic(location) {
-                this.stopAllMusic();
-                if (this.locationMusics[location]) {
-                    this.locationMusics[location].volume = 0.3;
-                    this.locationMusics[location].play().catch(e => {
-                        console.log("音频播放需用户交互");
-                    });
-                }
-            }
-
-            stopAllMusic() {
-                this.backgroundMusic.pause();
-                this.backgroundMusic.currentTime = 0;
-                Object.values(this.locationMusics).forEach(audio => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                });
-            }
-
-            startAdventure(location) {
-                this.showAdventure(location);
-            }
-
-            restoreState() {
-                if (this.gameState.currentLocation && this.gameState.isGameActive) {
-                    if (confirm('检测到未完成的冒险，是否继续？')) {
-                        this.showAdventure(this.gameState.currentLocation);
-                        if (this.gameState.gameProgress.length > 0) {
-                            this.updateProgress(this.gameState.gameProgress[this.gameState.gameProgress.length - 1]);
-                        }
-                    } else {
-                        this.gameState.resetGame();
-                    }
-                } else if (this.gameState.currentLocation) {
-                    this.showAdventure(this.gameState.currentLocation);
-                    if (this.gameState.gameProgress.length > 0) {
-                        this.updateProgress(this.gameState.gameProgress[this.gameState.gameProgress.length - 1]);
-                    }
-                }
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            new UIController();
+        // 设置音量
+        Object.values(audioElements).forEach(audio => {
+          if (audio) audio.volume = 0.3;
         });
 
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                const allAudios = document.querySelectorAll('audio');
-                allAudios.forEach(audio => {
-                    if (!audio.paused) audio.pause();
-                });
+        const playMusic = (type) => {
+          // 暂停所有音频
+          Object.values(audioElements).forEach(audio => {
+            if (audio && !audio.paused) {
+              audio.pause();
+              audio.currentTime = 0;
             }
+          });
+          // 播放指定音频
+          const audio = audioElements[type];
+          if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("音频播放需用户交互"));
+          }
+        };
+
+        // 用户状态
+        const username = ref('');
+        const currentUser = ref(null);
+        const users = ref([]);
+
+        // 游戏状态
+        const currentView = ref('map');
+        const showLeaderboard = ref(false);
+        const selectedLocationKey = ref(null);
+        const progress = ref([]);
+        const isPlaying = ref(false);
+
+        const locations = {
+          library: { name: '古老图书馆', icon: '🏛️' },
+          temple: { name: '神秘神庙', icon: '⛩️' },
+          forest: { name: '幽暗森林', icon: '🌳' },
+          cave: { name: '神秘洞穴', icon: '🕳️' }
+        };
+
+        const currentLocation = computed(() => 
+          selectedLocationKey.value ? locations[selectedLocationKey.value] : null
+        );
+
+        const rankedUsers = computed(() => {
+          return [...users.value]
+            .sort((a, b) => 
+              b.treasures - a.treasures || 
+              (a.bestTime || Infinity) - (b.bestTime || Infinity)
+            )
+            .slice(0, 10);
         });
-    </script>
+
+        // 存储管理
+        const loadStorage = () => {
+          const savedUsers = localStorage.getItem('treasure_users');
+          const savedCurrent = localStorage.getItem('current_user');
+          if (savedUsers) users.value = JSON.parse(savedUsers);
+          if (savedCurrent) currentUser.value = JSON.parse(savedCurrent);
+        };
+
+        const saveStorage = () => {
+          localStorage.setItem('treasure_users', JSON.stringify(users.value));
+          localStorage.setItem('current_user', JSON.stringify(currentUser.value));
+        };
+
+        // 用户操作
+        const login = () => {
+          if (!username.value.trim()) return;
+          let user = users.value.find(u => u.username === username.value);
+          if (!user) {
+            user = { username: username.value, games: 0, treasures: 0, bestTime: null };
+            users.value.push(user);
+          }
+          currentUser.value = user;
+          saveStorage();
+          playMusic('background'); // 登录后播放背景音乐
+          username.value = '';
+        };
+
+        const logout = () => {
+          currentUser.value = null;
+          // 停止所有音乐
+          Object.values(audioElements).forEach(audio => {
+            if (audio && !audio.paused) audio.pause();
+          });
+          saveStorage();
+        };
+
+        const updateStats = (treasureFound, timeSec) => {
+          const user = users.value.find(u => u.username === currentUser.value.username);
+          user.games += 1;
+          if (treasureFound) user.treasures += 1;
+          if (treasureFound) {
+            user.bestTime = user.bestTime ? Math.min(user.bestTime, timeSec) : timeSec;
+          }
+          currentUser.value = { ...user };
+          saveStorage();
+        };
+
+        // 游戏逻辑
+        const selectLocation = (key) => {
+          selectedLocationKey.value = key;
+          currentView.value = 'adventure';
+          progress.value = [];
+          playMusic(key); // 播放对应场景音乐
+        };
+
+        const goBackToMap = () => {
+          currentView.value = 'map';
+          playMusic('background'); // 返回时播放背景音乐
+        };
+
+        const startAdventure = async () => {
+          if (isPlaying.value || !selectedLocationKey.value) return;
+          isPlaying.value = true;
+          progress.value = [];
+          const startTime = Date.now();
+
+          try {
+            const clue = await TreasureAPI.getInitialClue(selectedLocationKey.value);
+            progress.value.push(clue);
+
+            const decoded = await TreasureAPI.decodeScript(clue);
+            progress.value.push(decoded);
+
+            const found = await TreasureAPI.searchLocation(selectedLocationKey.value);
+            progress.value.push(found);
+
+            const treasure = await TreasureAPI.openTreasureBox();
+            progress.value.push(treasure);
+
+            const timeSec = (Date.now() - startTime) / 1000;
+            updateStats(true, timeSec);
+          } catch (err) {
+            progress.value.push(`❌ 任务失败: ${err.message}`);
+            const timeSec = (Date.now() - startTime) / 1000;
+            updateStats(false, timeSec);
+          } finally {
+            isPlaying.value = false;
+          }
+        };
+
+        onMounted(() => {
+          loadStorage();
+          // 如果已登录，播放背景音乐
+          if (currentUser.value) {
+            playMusic('background');
+          }
+        });
+
+        return {
+          username,
+          currentUser,
+          users,
+          login,
+          logout,
+          rankedUsers,
+          currentView,
+          showLeaderboard,
+          selectedLocationKey,
+          progress,
+          isPlaying,
+          locations,
+          currentLocation,
+          selectLocation,
+          goBackToMap,
+          startAdventure
+        };
+      }
+    };
+
+    createApp(App).mount('#app');
+  </script>
 </body>
 </html>
